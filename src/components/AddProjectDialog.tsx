@@ -1,5 +1,4 @@
-
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Drawer, DrawerContent, DrawerHeader, DrawerTitle } from "@/components/ui/drawer";
 import { Button } from "@/components/ui/button";
@@ -19,6 +18,8 @@ interface AddProjectDialogProps {
   selectedDate: Date;
 }
 
+const FORM_DATA_KEY = 'addProjectFormData';
+
 export const AddProjectDialog = ({ open, onOpenChange, onAddProject, selectedDate }: AddProjectDialogProps) => {
   const [formData, setFormData] = useState({
     title: '',
@@ -30,6 +31,32 @@ export const AddProjectDialog = ({ open, onOpenChange, onAddProject, selectedDat
     status: 'scheduled' as Project['status'],
   });
   const isMobile = useIsMobile();
+
+  // Load saved form data when dialog opens
+  useEffect(() => {
+    if (open) {
+      const savedData = localStorage.getItem(FORM_DATA_KEY);
+      if (savedData) {
+        try {
+          const parsedData = JSON.parse(savedData);
+          setFormData(parsedData);
+        } catch (error) {
+          console.log('Error loading saved form data:', error);
+        }
+      }
+    }
+  }, [open]);
+
+  // Auto-save form data whenever it changes
+  useEffect(() => {
+    if (open) {
+      localStorage.setItem(FORM_DATA_KEY, JSON.stringify(formData));
+    }
+  }, [formData, open]);
+
+  const clearSavedData = () => {
+    localStorage.removeItem(FORM_DATA_KEY);
+  };
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -57,7 +84,26 @@ export const AddProjectDialog = ({ open, onOpenChange, onAddProject, selectedDat
       description: '',
       status: 'scheduled',
     });
+    clearSavedData();
     onOpenChange(false);
+  };
+
+  const handleCancel = () => {
+    // Keep the saved data when canceling
+    onOpenChange(false);
+  };
+
+  const handleClearForm = () => {
+    setFormData({
+      title: '',
+      clientName: '',
+      clientPhone: '',
+      address: '',
+      time: '',
+      description: '',
+      status: 'scheduled',
+    });
+    clearSavedData();
   };
 
   const form = (
@@ -144,8 +190,11 @@ export const AddProjectDialog = ({ open, onOpenChange, onAddProject, selectedDat
       </div>
 
       <div className="flex gap-2 pt-4">
-        <Button type="button" variant="outline" onClick={() => onOpenChange(false)} className="flex-1">
+        <Button type="button" variant="outline" onClick={handleCancel} className="flex-1">
           Cancel
+        </Button>
+        <Button type="button" variant="ghost" onClick={handleClearForm} className="text-sm">
+          Clear
         </Button>
         <Button type="submit" className="flex-1">
           Add Project
@@ -157,17 +206,15 @@ export const AddProjectDialog = ({ open, onOpenChange, onAddProject, selectedDat
   if (isMobile) {
     return (
       <Drawer open={open} onOpenChange={onOpenChange}>
-        <DrawerContent className="px-4 pb-8">
-          <DrawerHeader className="px-0">
+        <DrawerContent className="max-h-[90vh]">
+          <DrawerHeader className="px-4">
             <DrawerTitle>Add New Project</DrawerTitle>
             <p className="text-sm text-muted-foreground">
               Scheduled for {format(selectedDate, "MMMM d, yyyy")}
             </p>
           </DrawerHeader>
-          <ScrollArea className="h-[60vh] mt-4">
-            <div className="pr-4">
-              {form}
-            </div>
+          <ScrollArea className="flex-1 px-4 pb-8">
+            {form}
           </ScrollArea>
         </DrawerContent>
       </Drawer>
@@ -176,14 +223,14 @@ export const AddProjectDialog = ({ open, onOpenChange, onAddProject, selectedDat
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-md">
+      <DialogContent className="sm:max-w-md max-h-[90vh] flex flex-col">
         <DialogHeader>
           <DialogTitle>Add New Project</DialogTitle>
           <p className="text-sm text-muted-foreground">
             Scheduled for {format(selectedDate, "MMMM d, yyyy")}
           </p>
         </DialogHeader>
-        <ScrollArea className="h-[60vh] mt-4">
+        <ScrollArea className="flex-1 mt-4">
           <div className="pr-4">
             {form}
           </div>
