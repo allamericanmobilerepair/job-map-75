@@ -9,8 +9,7 @@ import { Label } from "@/components/ui/label";
 import { Project } from "@/types/project";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { format } from "date-fns";
-import mapboxgl from 'mapbox-gl';
-import 'mapbox-gl/dist/mapbox-gl.css';
+import { Loader } from "@googlemaps/js-api-loader";
 
 interface ProjectMapProps {
   projects: Project[];
@@ -21,10 +20,10 @@ interface ProjectMapProps {
 
 export const ProjectMap = ({ projects, selectedDate, onUpdateProject, highlightedProjectId }: ProjectMapProps) => {
   const mapContainer = useRef<HTMLDivElement>(null);
-  const map = useRef<mapboxgl.Map | null>(null);
+  const map = useRef<google.maps.Map | null>(null);
   const [userLocation, setUserLocation] = useState<{lat: number, lng: number} | null>(null);
   const [selectedProject, setSelectedProject] = useState<Project | null>(null);
-  const [mapboxToken, setMapboxToken] = useState<string>("");
+  const [googleMapsApiKey, setGoogleMapsApiKey] = useState<string>("");
   const [mapInitialized, setMapInitialized] = useState(false);
   const isMobile = useIsMobile();
 
@@ -33,7 +32,6 @@ export const ProjectMap = ({ projects, selectedDate, onUpdateProject, highlighte
     return projectDate.toDateString() === selectedDate.toDateString();
   });
 
-  // Show all projects on map, but highlight today's projects
   const allProjects = projects;
 
   // Auto-select highlighted project
@@ -65,49 +63,68 @@ export const ProjectMap = ({ projects, selectedDate, onUpdateProject, highlighte
     }
   }, []);
 
-  // Initialize Mapbox map
+  // Initialize Google Maps
   useEffect(() => {
-    if (!mapContainer.current || !mapboxToken || !userLocation) return;
+    if (!mapContainer.current || !googleMapsApiKey || !userLocation) return;
 
-    mapboxgl.accessToken = mapboxToken;
-
-    map.current = new mapboxgl.Map({
-      container: mapContainer.current,
-      style: 'mapbox://styles/mapbox/streets-v12',
-      center: [userLocation.lng, userLocation.lat],
-      zoom: 12
+    const loader = new Loader({
+      apiKey: googleMapsApiKey,
+      version: "weekly",
     });
 
-    // Add navigation controls
-    map.current.addControl(new mapboxgl.NavigationControl(), 'top-right');
+    loader.load().then(() => {
+      if (!mapContainer.current) return;
 
-    map.current.on('load', () => {
+      map.current = new google.maps.Map(mapContainer.current, {
+        center: { lat: userLocation.lat, lng: userLocation.lng },
+        zoom: 12,
+      });
+
       setMapInitialized(true);
-      
+
       // Add user location marker
-      new mapboxgl.Marker({ color: '#3b82f6' })
-        .setLngLat([userLocation.lng, userLocation.lat])
-        .addTo(map.current!);
+      new google.maps.Marker({
+        position: { lat: userLocation.lat, lng: userLocation.lng },
+        map: map.current,
+        title: "Your Location",
+        icon: {
+          url: 'data:image/svg+xml;base64,' + btoa(`
+            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="#3b82f6">
+              <circle cx="12" cy="12" r="8"/>
+            </svg>
+          `),
+          scaledSize: new google.maps.Size(24, 24),
+        }
+      });
 
       // Add project markers
       allProjects.forEach((project) => {
-        const marker = new mapboxgl.Marker({ 
-          color: getMarkerColor(project.status)
-        })
-          .setLngLat([project.longitude, project.latitude])
-          .addTo(map.current!);
+        const marker = new google.maps.Marker({
+          position: { lat: project.latitude, lng: project.longitude },
+          map: map.current,
+          title: project.title,
+          icon: {
+            url: 'data:image/svg+xml;base64,' + btoa(`
+              <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="${getMarkerColor(project.status)}">
+                <path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z"/>
+              </svg>
+            `),
+            scaledSize: new google.maps.Size(24, 24),
+          }
+        });
 
-        // Add click handler to marker
-        marker.getElement().addEventListener('click', () => {
+        marker.addListener('click', () => {
           setSelectedProject(project);
         });
       });
+    }).catch((error) => {
+      console.error("Error loading Google Maps:", error);
     });
 
     return () => {
-      map.current?.remove();
+      map.current = null;
     };
-  }, [mapboxToken, userLocation, allProjects]);
+  }, [googleMapsApiKey, userLocation, allProjects]);
 
   const getStatusColor = (status: Project['status']) => {
     switch (status) {
@@ -152,7 +169,7 @@ export const ProjectMap = ({ projects, selectedDate, onUpdateProject, highlighte
     }
   };
 
-  if (!mapboxToken) {
+  if (!googleMapsApiKey) {
     return (
       <div className="h-full flex items-center justify-center bg-gray-50">
         <Card className="w-full max-w-md mx-4">
@@ -161,18 +178,19 @@ export const ProjectMap = ({ projects, selectedDate, onUpdateProject, highlighte
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="space-y-2">
-              <Label htmlFor="mapbox-token">Mapbox Public Token</Label>
+              <Label htmlFor="google-maps-key">Google Maps API Key</Label>
               <Input
-                id="mapbox-token"
+                id="google-maps-key"
                 type="text"
-                placeholder="pk.eyJ1IjoieW91cnVzZXJuYW1lIi..."
-                value={mapboxToken}
-                onChange={(e) => setMapboxToken(e.target.value)}
+                placeholder="AIzaSyC..."
+                value={googleMapsApiKey}
+                onChange={(e) => setGoogleMapsApiKey(e.target.value)}
               />
             </div>
             <div className="text-sm text-muted-foreground">
-              <p>To display the map, you need a Mapbox public token.</p>
-              <p>Get yours at <a href="https://mapbox.com" target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline">mapbox.com</a></p>
+              <p>To display the map, you need a Google Maps API key.</p>
+              <p>Get yours at <a href="https://console.cloud.google.com/" target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline">Google Cloud Console</a></p>
+              <p className="mt-2 text-xs">Enable the "Maps JavaScript API" in your Google Cloud project.</p>
             </div>
           </CardContent>
         </Card>
@@ -182,7 +200,7 @@ export const ProjectMap = ({ projects, selectedDate, onUpdateProject, highlighte
 
   return (
     <div className="h-full relative">
-      {/* Mapbox container */}
+      {/* Google Maps container */}
       <div 
         ref={mapContainer} 
         className="w-full h-full"
