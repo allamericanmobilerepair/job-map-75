@@ -35,10 +35,23 @@ export const ProjectSidebar = ({
   const [showAddDialog, setShowAddDialog] = useState(false);
   const isMobile = useIsMobile();
 
+  // Fix the date filtering logic
   const todaysProjects = projects.filter(project => {
     const projectDate = new Date(project.scheduledDate);
-    return projectDate.toDateString() === selectedDate.toDateString();
+    const selected = new Date(selectedDate);
+    
+    // Compare just the date parts (year, month, day) - normalize to avoid timezone issues
+    const projectDateString = projectDate.toISOString().split('T')[0];
+    const selectedDateString = selected.toISOString().split('T')[0];
+    
+    console.log("Filtering project:", project.title, "Project date:", projectDateString, "Selected date:", selectedDateString, "Match:", projectDateString === selectedDateString);
+    
+    return projectDateString === selectedDateString;
   });
+
+  console.log("Sidebar - Total projects:", projects.length);
+  console.log("Sidebar - Selected date:", selectedDate.toISOString().split('T')[0]);
+  console.log("Sidebar - Filtered projects for selected date:", todaysProjects.length, todaysProjects.map(p => ({ title: p.title, date: p.scheduledDate })));
 
   const getStatusColor = (status: Project['status']) => {
     switch (status) {
