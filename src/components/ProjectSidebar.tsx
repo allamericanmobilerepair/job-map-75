@@ -1,6 +1,6 @@
 
 import { useState } from "react";
-import { Calendar, Plus, MapPin, Clock, User, Phone } from "lucide-react";
+import { Calendar, Plus, MapPin, Clock, User, Phone, Share2 } from "lucide-react";
 import { format } from "date-fns";
 import {
   Sidebar,
@@ -12,8 +12,10 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { AddProjectDialog } from "@/components/AddProjectDialog";
+import { ProjectDetailsDialog } from "@/components/ProjectDetailsDialog";
 import { Project } from "@/types/project";
 import { useIsMobile } from "@/hooks/use-mobile";
+import { useToast } from "@/hooks/use-toast";
 
 interface ProjectSidebarProps {
   projects: Project[];
@@ -33,7 +35,9 @@ export const ProjectSidebar = ({
   onDeleteProject,
 }: ProjectSidebarProps) => {
   const [showAddDialog, setShowAddDialog] = useState(false);
+  const [selectedProject, setSelectedProject] = useState<Project | null>(null);
   const isMobile = useIsMobile();
+  const { toast } = useToast();
 
   // Show all projects instead of filtering by date
   const allProjects = projects;
@@ -48,6 +52,38 @@ export const ProjectSidebar = ({
       case 'completed': return 'bg-green-500/10 text-green-700 border-green-200';
       case 'cancelled': return 'bg-red-500/10 text-red-700 border-red-200';
       default: return 'bg-gray-500/10 text-gray-700 border-gray-200';
+    }
+  };
+
+  const handleProjectClick = (project: Project) => {
+    setSelectedProject(project);
+  };
+
+  const handleShareProject = (project: Project, e: React.MouseEvent) => {
+    e.stopPropagation();
+    
+    const projectDetails = `
+Project: ${project.title}
+Client: ${project.clientName}
+Phone: ${project.clientPhone}
+Address: ${project.address}
+Date: ${format(new Date(project.scheduledDate), "MMM d, yyyy")}
+Time: ${format(new Date(`2000-01-01T${project.time}`), "h:mm a")}
+Status: ${project.status}
+${project.description ? `Notes: ${project.description}` : ''}
+    `.trim();
+
+    if (navigator.share && isMobile) {
+      navigator.share({
+        title: `Project: ${project.title}`,
+        text: projectDetails,
+      });
+    } else {
+      navigator.clipboard.writeText(projectDetails);
+      toast({
+        title: "Project details copied",
+        description: "Project information has been copied to clipboard for sharing",
+      });
     }
   };
 
@@ -92,15 +128,29 @@ export const ProjectSidebar = ({
             </Card>
           ) : (
             allProjects.map((project) => (
-              <Card key={project.id} className="hover:shadow-md transition-shadow">
+              <Card 
+                key={project.id} 
+                className="hover:shadow-md transition-shadow cursor-pointer"
+                onClick={() => handleProjectClick(project)}
+              >
                 <CardHeader className="pb-2">
                   <div className="flex items-start justify-between">
                     <CardTitle className="text-sm font-medium truncate pr-2">
                       {project.title}
                     </CardTitle>
-                    <Badge variant="outline" className={`text-xs ${getStatusColor(project.status)}`}>
-                      {project.status}
-                    </Badge>
+                    <div className="flex items-center gap-1">
+                      <Badge variant="outline" className={`text-xs ${getStatusColor(project.status)}`}>
+                        {project.status}
+                      </Badge>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="h-6 w-6 p-0"
+                        onClick={(e) => handleShareProject(project, e)}
+                      >
+                        <Share2 className="h-3 w-3" />
+                      </Button>
+                    </div>
                   </div>
                 </CardHeader>
                 <CardContent className="space-y-2">
@@ -146,6 +196,16 @@ export const ProjectSidebar = ({
         onAddProject={onAddProject}
         selectedDate={selectedDate}
       />
+
+      {selectedProject && (
+        <ProjectDetailsDialog
+          project={selectedProject}
+          open={!!selectedProject}
+          onOpenChange={(open) => !open && setSelectedProject(null)}
+          onUpdateProject={onUpdateProject}
+          onDeleteProject={onDeleteProject}
+        />
+      )}
     </>
   );
 };
