@@ -1,7 +1,5 @@
-
 import { useEffect, useState } from "react";
 import { Project } from "@/types/project";
-import { MapSetup } from "./map/MapSetup";
 import { GoogleMap } from "./map/GoogleMap";
 import { ProjectDetailsPopup } from "./map/ProjectDetailsPopup";
 import { MapControls } from "./map/MapControls";
