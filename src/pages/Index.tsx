@@ -11,6 +11,7 @@ const Index = () => {
   const [projects, setProjects] = useState<Project[]>([]);
   const [selectedDate, setSelectedDate] = useState<Date>(new Date());
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [highlightedProjectId, setHighlightedProjectId] = useState<string | null>(null);
   const isMobile = useIsMobile();
 
   const addProject = (project: Omit<Project, 'id'>) => {
@@ -19,6 +20,15 @@ const Index = () => {
       id: Date.now().toString(),
     };
     setProjects(prev => [...prev, newProject]);
+    
+    // Highlight the new project on the map
+    setHighlightedProjectId(newProject.id);
+    
+    // Clear highlight after 3 seconds
+    setTimeout(() => {
+      setHighlightedProjectId(null);
+    }, 3000);
+    
     if (isMobile) {
       setSidebarOpen(false);
     }
@@ -56,6 +66,7 @@ const Index = () => {
               projects={projects}
               selectedDate={selectedDate}
               onUpdateProject={updateProject}
+              highlightedProjectId={highlightedProjectId}
             />
           </div>
         </main>

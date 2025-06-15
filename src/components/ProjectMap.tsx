@@ -1,4 +1,3 @@
-
 import { useEffect, useRef, useState } from "react";
 import { MapPin, Navigation } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -12,9 +11,10 @@ interface ProjectMapProps {
   projects: Project[];
   selectedDate: Date;
   onUpdateProject: (project: Project) => void;
+  highlightedProjectId?: string | null;
 }
 
-export const ProjectMap = ({ projects, selectedDate, onUpdateProject }: ProjectMapProps) => {
+export const ProjectMap = ({ projects, selectedDate, onUpdateProject, highlightedProjectId }: ProjectMapProps) => {
   const mapContainer = useRef<HTMLDivElement>(null);
   const [userLocation, setUserLocation] = useState<{lat: number, lng: number} | null>(null);
   const [selectedProject, setSelectedProject] = useState<Project | null>(null);
@@ -27,6 +27,16 @@ export const ProjectMap = ({ projects, selectedDate, onUpdateProject }: ProjectM
 
   // Show all projects on map, but highlight today's projects
   const allProjects = projects;
+
+  // Auto-select highlighted project
+  useEffect(() => {
+    if (highlightedProjectId) {
+      const highlightedProject = projects.find(p => p.id === highlightedProjectId);
+      if (highlightedProject) {
+        setSelectedProject(highlightedProject);
+      }
+    }
+  }, [highlightedProjectId, projects]);
 
   useEffect(() => {
     // Get user's current location
@@ -91,12 +101,13 @@ export const ProjectMap = ({ projects, selectedDate, onUpdateProject }: ProjectM
         {/* Map markers for all projects */}
         {allProjects.map((project, index) => {
           const isTodaysProject = isToday(project);
+          const isHighlighted = highlightedProjectId === project.id;
           return (
             <div
               key={project.id}
               className={`absolute transform -translate-x-1/2 -translate-y-1/2 cursor-pointer transition-all hover:scale-110 ${
                 isMobile ? 'active:scale-95' : ''
-              } ${isTodaysProject ? 'z-20' : 'z-10'}`}
+              } ${isTodaysProject ? 'z-20' : 'z-10'} ${isHighlighted ? 'z-30 animate-bounce' : ''}`}
               style={{
                 left: `${20 + (index * 12) % 65}%`,
                 top: `${25 + (index * 15) % 50}%`,
@@ -105,16 +116,19 @@ export const ProjectMap = ({ projects, selectedDate, onUpdateProject }: ProjectM
             >
               <div className={`w-6 h-6 ${getStatusColor(project.status)} rounded-full border-2 ${
                 isTodaysProject ? 'border-white shadow-lg' : 'border-gray-300 opacity-70'
-              } flex items-center justify-center`}>
+              } ${isHighlighted ? 'border-yellow-400 shadow-xl scale-125' : ''} flex items-center justify-center`}>
                 <MapPin className="w-3 h-3 text-white" />
               </div>
               <div className={`absolute top-8 left-1/2 transform -translate-x-1/2 bg-white px-2 py-1 rounded shadow-sm text-xs whitespace-nowrap ${
                 isTodaysProject ? 'font-medium' : 'opacity-70'
-              }`}>
+              } ${isHighlighted ? 'bg-yellow-100 font-bold border border-yellow-300' : ''}`}>
                 {project.title}
               </div>
               {isTodaysProject && (
                 <div className="absolute -top-2 -right-2 w-3 h-3 bg-red-500 rounded-full animate-pulse"></div>
+              )}
+              {isHighlighted && (
+                <div className="absolute -top-3 -right-3 w-4 h-4 bg-yellow-400 rounded-full animate-ping"></div>
               )}
             </div>
           );
