@@ -20,6 +20,8 @@ export const GoogleMap = ({
 }: GoogleMapProps) => {
   const mapContainer = useRef<HTMLDivElement>(null);
   const map = useRef<any>(null);
+  const markers = useRef<any[]>([]);
+  const mapLoaded = useRef(false);
 
   const getMarkerColor = (status: Project['status']) => {
     switch (status) {
@@ -31,9 +33,9 @@ export const GoogleMap = ({
     }
   };
 
-  // Initialize Google Maps
+  // Initialize Google Maps only once
   useEffect(() => {
-    if (!mapContainer.current || !googleMapsApiKey || !userLocation) return;
+    if (!mapContainer.current || !googleMapsApiKey || !userLocation || mapLoaded.current) return;
 
     const loader = new Loader({
       apiKey: googleMapsApiKey,
@@ -48,6 +50,7 @@ export const GoogleMap = ({
         zoom: 12,
       });
 
+      mapLoaded.current = true;
       onMapInitialized(true);
 
       // Add user location marker
@@ -64,35 +67,42 @@ export const GoogleMap = ({
           scaledSize: new window.google.maps.Size(24, 24),
         }
       });
-
-      // Add project markers
-      projects.forEach((project) => {
-        const marker = new window.google.maps.Marker({
-          position: { lat: project.latitude, lng: project.longitude },
-          map: map.current,
-          title: project.title,
-          icon: {
-            url: 'data:image/svg+xml;base64,' + btoa(`
-              <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="${getMarkerColor(project.status)}">
-                <path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z"/>
-              </svg>
-            `),
-            scaledSize: new window.google.maps.Size(24, 24),
-          }
-        });
-
-        marker.addListener('click', () => {
-          onProjectClick(project);
-        });
-      });
     }).catch((error) => {
       console.error("Error loading Google Maps:", error);
     });
+  }, [googleMapsApiKey, userLocation, onMapInitialized]);
 
-    return () => {
-      map.current = null;
-    };
-  }, [googleMapsApiKey, userLocation, projects, onProjectClick, onMapInitialized]);
+  // Update markers when projects change
+  useEffect(() => {
+    if (!map.current || !mapLoaded.current) return;
+
+    // Clear existing project markers
+    markers.current.forEach(marker => marker.setMap(null));
+    markers.current = [];
+
+    // Add new project markers
+    projects.forEach((project) => {
+      const marker = new window.google.maps.Marker({
+        position: { lat: project.latitude, lng: project.longitude },
+        map: map.current,
+        title: project.title,
+        icon: {
+          url: 'data:image/svg+xml;base64,' + btoa(`
+            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="${getMarkerColor(project.status)}">
+              <path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z"/>
+            </svg>
+          `),
+          scaledSize: new window.google.maps.Size(24, 24),
+        }
+      });
+
+      marker.addListener('click', () => {
+        onProjectClick(project);
+      });
+
+      markers.current.push(marker);
+    });
+  }, [projects, onProjectClick]);
 
   return <div ref={mapContainer} className="w-full h-full" />;
 };
