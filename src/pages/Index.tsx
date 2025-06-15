@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { SidebarProvider } from "@/components/ui/sidebar";
 import { ProjectMap } from "@/components/ProjectMap";
@@ -8,7 +7,7 @@ import { useIsMobile } from "@/hooks/use-mobile";
 import { Project } from "@/types/project";
 
 const Index = () => {
-  // Initialize with dummy projects
+  // Initialize with dummy projects - one older project and three recent ones
   const [projects, setProjects] = useState<Project[]>([
     {
       id: "1",
@@ -51,16 +50,16 @@ const Index = () => {
     },
     {
       id: "4",
-      title: "Roof Repair",
-      clientName: "David Williams",
-      clientPhone: "(555) 369-2580",
-      address: "321 Cedar Lane, Brooklyn, NY 11201",
-      scheduledDate: new Date(Date.now() - 86400000).toISOString().split('T')[0], // Yesterday
-      time: "08:00",
-      description: "Emergency roof leak repair and shingle replacement.",
+      title: "Foundation Repair",
+      clientName: "Robert Thompson",
+      clientPhone: "(555) 555-0123",
+      address: "987 Elm Street, Queens, NY 11101",
+      scheduledDate: new Date(Date.now() - 604800000).toISOString().split('T')[0], // One week ago
+      time: "08:30",
+      description: "Basement foundation crack repair and waterproofing. Long-term client with ongoing maintenance needs.",
       status: "completed",
-      latitude: 40.6892,
-      longitude: -73.9442
+      latitude: 40.7282,
+      longitude: -73.7949
     }
   ]);
   const [selectedDate, setSelectedDate] = useState<Date>(new Date());
