@@ -8,7 +8,61 @@ import { useIsMobile } from "@/hooks/use-mobile";
 import { Project } from "@/types/project";
 
 const Index = () => {
-  const [projects, setProjects] = useState<Project[]>([]);
+  // Initialize with dummy projects
+  const [projects, setProjects] = useState<Project[]>([
+    {
+      id: "1",
+      title: "Kitchen Renovation",
+      clientName: "Sarah Johnson",
+      clientPhone: "(555) 123-4567",
+      address: "123 Oak Street, Downtown, NY 10001",
+      scheduledDate: new Date().toISOString().split('T')[0], // Today
+      time: "09:00",
+      description: "Complete kitchen remodel including new cabinets, countertops, and appliances. Client wants modern farmhouse style.",
+      status: "scheduled",
+      latitude: 40.7128,
+      longitude: -74.0060
+    },
+    {
+      id: "2",
+      title: "Bathroom Upgrade",
+      clientName: "Mike Rodriguez",
+      clientPhone: "(555) 987-6543",
+      address: "456 Pine Avenue, Midtown, NY 10002",
+      scheduledDate: new Date().toISOString().split('T')[0], // Today
+      time: "14:30",
+      description: "Master bathroom renovation with walk-in shower and double vanity.",
+      status: "in-progress",
+      latitude: 40.7589,
+      longitude: -73.9851
+    },
+    {
+      id: "3",
+      title: "Deck Installation",
+      clientName: "Emily Chen",
+      clientPhone: "(555) 246-8135",
+      address: "789 Maple Drive, Uptown, NY 10003",
+      scheduledDate: new Date(Date.now() + 86400000).toISOString().split('T')[0], // Tomorrow
+      time: "10:00",
+      description: "Build new composite deck with railings and built-in seating area.",
+      status: "scheduled",
+      latitude: 40.7831,
+      longitude: -73.9712
+    },
+    {
+      id: "4",
+      title: "Roof Repair",
+      clientName: "David Williams",
+      clientPhone: "(555) 369-2580",
+      address: "321 Cedar Lane, Brooklyn, NY 11201",
+      scheduledDate: new Date(Date.now() - 86400000).toISOString().split('T')[0], // Yesterday
+      time: "08:00",
+      description: "Emergency roof leak repair and shingle replacement.",
+      status: "completed",
+      latitude: 40.6892,
+      longitude: -73.9442
+    }
+  ]);
   const [selectedDate, setSelectedDate] = useState<Date>(new Date());
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [highlightedProjectId, setHighlightedProjectId] = useState<string | null>(null);
