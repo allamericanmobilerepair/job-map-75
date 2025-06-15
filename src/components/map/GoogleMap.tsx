@@ -23,6 +23,10 @@ export const GoogleMap = ({
   const markers = useRef<any[]>([]);
   const mapLoaded = useRef(false);
 
+  console.log("GoogleMap render - Projects:", projects.length, projects);
+  console.log("GoogleMap render - UserLocation:", userLocation);
+  console.log("GoogleMap render - MapLoaded:", mapLoaded.current);
+
   const getMarkerColor = (status: Project['status']) => {
     switch (status) {
       case 'scheduled': return '#3b82f6';
@@ -35,7 +39,16 @@ export const GoogleMap = ({
 
   // Initialize Google Maps only once
   useEffect(() => {
+    console.log("Map initialization effect - Checking conditions:", {
+      hasContainer: !!mapContainer.current,
+      hasApiKey: !!googleMapsApiKey,
+      hasUserLocation: !!userLocation,
+      mapAlreadyLoaded: mapLoaded.current
+    });
+
     if (!mapContainer.current || !googleMapsApiKey || !userLocation || mapLoaded.current) return;
+
+    console.log("Starting Google Maps initialization...");
 
     const loader = new Loader({
       apiKey: googleMapsApiKey,
@@ -43,13 +56,18 @@ export const GoogleMap = ({
     });
 
     loader.load().then(() => {
-      if (!mapContainer.current || !window.google) return;
+      console.log("Google Maps API loaded successfully");
+      if (!mapContainer.current || !window.google) {
+        console.error("Map container or Google Maps API not available after loading");
+        return;
+      }
 
       map.current = new window.google.maps.Map(mapContainer.current, {
         center: { lat: userLocation.lat, lng: userLocation.lng },
         zoom: 12,
       });
 
+      console.log("Map created successfully");
       mapLoaded.current = true;
       onMapInitialized(true);
 
@@ -67,6 +85,7 @@ export const GoogleMap = ({
           scaledSize: new window.google.maps.Size(24, 24),
         }
       });
+      console.log("User location marker added");
     }).catch((error) => {
       console.error("Error loading Google Maps:", error);
     });
@@ -74,14 +93,27 @@ export const GoogleMap = ({
 
   // Update markers when projects change
   useEffect(() => {
-    if (!map.current || !mapLoaded.current) return;
+    console.log("Markers effect - Checking conditions:", {
+      hasMap: !!map.current,
+      mapLoaded: mapLoaded.current,
+      projectsCount: projects.length
+    });
 
+    if (!map.current || !mapLoaded.current) {
+      console.log("Map not ready for markers yet");
+      return;
+    }
+
+    console.log("Clearing existing markers:", markers.current.length);
     // Clear existing project markers
     markers.current.forEach(marker => marker.setMap(null));
     markers.current = [];
 
+    console.log("Adding new project markers for", projects.length, "projects");
     // Add new project markers
-    projects.forEach((project) => {
+    projects.forEach((project, index) => {
+      console.log(`Adding marker ${index + 1}:`, project.title, `(${project.latitude}, ${project.longitude})`);
+      
       const marker = new window.google.maps.Marker({
         position: { lat: project.latitude, lng: project.longitude },
         map: map.current,
@@ -102,6 +134,8 @@ export const GoogleMap = ({
 
       markers.current.push(marker);
     });
+    
+    console.log("Finished adding markers. Total markers:", markers.current.length);
   }, [projects, onProjectClick]);
 
   return <div ref={mapContainer} className="w-full h-full" />;
