@@ -36,11 +36,15 @@ export const AddProjectDialog = ({ open, onOpenChange, onAddProject, selectedDat
       return;
     }
 
+    // Generate random coordinates for now (in a real app, you'd geocode the address)
+    const latitude = 40.7128 + (Math.random() - 0.5) * 0.1;
+    const longitude = -74.0060 + (Math.random() - 0.5) * 0.1;
+
     onAddProject({
       ...formData,
       scheduledDate: format(selectedDate, 'yyyy-MM-dd'),
-      latitude: 0, // In a real app, you'd geocode the address
-      longitude: 0,
+      latitude,
+      longitude,
     });
 
     setFormData({
@@ -57,50 +61,48 @@ export const AddProjectDialog = ({ open, onOpenChange, onAddProject, selectedDat
 
   const form = (
     <form onSubmit={handleSubmit} className="space-y-4">
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <div className="space-y-2">
-          <Label htmlFor="title">Project Title *</Label>
-          <Input
-            id="title"
-            value={formData.title}
-            onChange={(e) => setFormData(prev => ({ ...prev, title: e.target.value }))}
-            placeholder="Kitchen renovation"
-            required
-          />
-        </div>
-        <div className="space-y-2">
-          <Label htmlFor="clientName">Client Name *</Label>
-          <Input
-            id="clientName"
-            value={formData.clientName}
-            onChange={(e) => setFormData(prev => ({ ...prev, clientName: e.target.value }))}
-            placeholder="John Smith"
-            required
-          />
-        </div>
+      <div className="space-y-2">
+        <Label htmlFor="title">Project Title *</Label>
+        <Input
+          id="title"
+          value={formData.title}
+          onChange={(e) => setFormData(prev => ({ ...prev, title: e.target.value }))}
+          placeholder="Kitchen renovation"
+          required
+        />
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <div className="space-y-2">
-          <Label htmlFor="clientPhone">Phone Number</Label>
-          <Input
-            id="clientPhone"
-            type="tel"
-            value={formData.clientPhone}
-            onChange={(e) => setFormData(prev => ({ ...prev, clientPhone: e.target.value }))}
-            placeholder="(555) 123-4567"
-          />
-        </div>
-        <div className="space-y-2">
-          <Label htmlFor="time">Time *</Label>
-          <Input
-            id="time"
-            type="time"
-            value={formData.time}
-            onChange={(e) => setFormData(prev => ({ ...prev, time: e.target.value }))}
-            required
-          />
-        </div>
+      <div className="space-y-2">
+        <Label htmlFor="clientName">Client Name *</Label>
+        <Input
+          id="clientName"
+          value={formData.clientName}
+          onChange={(e) => setFormData(prev => ({ ...prev, clientName: e.target.value }))}
+          placeholder="John Smith"
+          required
+        />
+      </div>
+
+      <div className="space-y-2">
+        <Label htmlFor="clientPhone">Phone Number</Label>
+        <Input
+          id="clientPhone"
+          type="tel"
+          value={formData.clientPhone}
+          onChange={(e) => setFormData(prev => ({ ...prev, clientPhone: e.target.value }))}
+          placeholder="(555) 123-4567"
+        />
+      </div>
+
+      <div className="space-y-2">
+        <Label htmlFor="time">Time *</Label>
+        <Input
+          id="time"
+          type="time"
+          value={formData.time}
+          onChange={(e) => setFormData(prev => ({ ...prev, time: e.target.value }))}
+          required
+        />
       </div>
 
       <div className="space-y-2">
@@ -154,14 +156,16 @@ export const AddProjectDialog = ({ open, onOpenChange, onAddProject, selectedDat
   if (isMobile) {
     return (
       <Drawer open={open} onOpenChange={onOpenChange}>
-        <DrawerContent className="px-4 pb-4">
-          <DrawerHeader>
+        <DrawerContent className="px-4 pb-8 max-h-[90vh] overflow-y-auto">
+          <DrawerHeader className="px-0">
             <DrawerTitle>Add New Project</DrawerTitle>
             <p className="text-sm text-muted-foreground">
               Scheduled for {format(selectedDate, "MMMM d, yyyy")}
             </p>
           </DrawerHeader>
-          {form}
+          <div className="mt-4">
+            {form}
+          </div>
         </DrawerContent>
       </Drawer>
     );
@@ -169,7 +173,7 @@ export const AddProjectDialog = ({ open, onOpenChange, onAddProject, selectedDat
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-md">
+      <DialogContent className="sm:max-w-md max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>Add New Project</DialogTitle>
           <p className="text-sm text-muted-foreground">
