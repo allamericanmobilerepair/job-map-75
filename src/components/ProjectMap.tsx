@@ -18,7 +18,7 @@ interface ProjectMapProps {
 export const ProjectMap = ({ projects, selectedDate, onUpdateProject, highlightedProjectId }: ProjectMapProps) => {
   const [userLocation, setUserLocation] = useState<{lat: number, lng: number} | null>(null);
   const [selectedProject, setSelectedProject] = useState<Project | null>(null);
-  const [googleMapsApiKey, setGoogleMapsApiKey] = useState<string>("");
+  const [googleMapsApiKey] = useState<string>("AIzaSyBFJG5pXmi0M-mcUFEAMZkKkJUuCjD4DSU");
   const [mapInitialized, setMapInitialized] = useState(false);
 
   const todaysProjects = projects.filter(project => {
@@ -54,10 +54,6 @@ export const ProjectMap = ({ projects, selectedDate, onUpdateProject, highlighte
       );
     }
   }, []);
-
-  if (!googleMapsApiKey) {
-    return <MapSetup googleMapsApiKey={googleMapsApiKey} onApiKeyChange={setGoogleMapsApiKey} />;
-  }
 
   return (
     <div className="h-full relative">
